@@ -1,83 +1,57 @@
-import React from "react";
-import axios from "axios";
-import {useState,useEffect} from "react";
+import React, { useState, useEffect } from 'react';
+import UsersList from './UsersList';
 
-const styles = {
- 'border': '1px solid black',
- 'margin' : '8px',
- 'textAlign' : 'center'
-}
 export default function App() {
+  const [usersData, setUsersData] = useState([]);
+  const [filteredData, setFilteredData] = useState([]);
 
-let [data, setData ] = useState([])
-let [content, setContent ] = useState("")
-const [filteredData, setFilteredData] = useState([])
+  useEffect(() => {
+    getData();
+  }, []);
 
-  useEffect( ()=>{
-    axios("https://jsonplaceholder.typicode.com/posts")
-    .then((response=>{
-      setData([...response.data])
-    }))
-  },[ ])
-
-  const handleChange = (e)=>{
-    setContent(e.target.value)
-  }
-
-  const handleClick = ()=>{
-    if(content == ""){
-      setFilteredData([]);
-      return;
-    }
-
-    if(content != ""){
-      let filteredArr = data.filter((item)=>{
-        if(item.title.toLowerCase().includes(content.toLowerCase() )){
-          return item;
-        }
-      })
-      setFilteredData([...filteredArr])
-    }
-    setContent("")
-    // console.log(filteredData, "filtereddArr")
-    // console.log(filteredData.length, "43")
-  }
+  const getData = async () => {
+    const infoObject = await fetch(
+      'https://jsonplaceholder.typicode.com/posts'
+    );
+    const data = await infoObject.json();
+    setUsersData([...data]);
+  };
 
   return (
     <div>
-      <div><input value = {content}placeholder = "Search" type = "text" onChange ={handleChange}/></div>
-      <button onClick = {handleClick}>Filter</button>
-      
-      {data.length == 0 && "..fetching"} 
-      {data.length != 0 && filteredData == 0 && <div className= "card-container"> 
-        {
-           
-           data.map((item)=>{
-             return (
-               <div className = "card" key = {item.id} style= {styles}>
-                 <h2>Title</h2>
-                 <p>{item.title}</p>
-                 <h2>Normal</h2>
-                 
-               </div>
-             )
-           })
-         }
-        
-        </div>}
+      <Input usersData={usersData} setFilteredData={setFilteredData} />
 
-        {filteredData.length != 0 && <div className= "card-container">{
-           filteredData.map((item)=>{
-             return (
-               <div className = "card" key = {item.id} style= {styles}>
-                 <h2>Title</h2>
-                 <p>{item.title}</p>
-                 <h2>filteredData</h2>
-                 
-               </div>
-             )
-           })
-         }</div>}
-      </div>
+      {filteredData.length ? (
+        <UsersList usersData={filteredData} />
+      ) : usersData.length ? (
+        <UsersList usersData={usersData} />
+      ) : (
+        'Fetching..!!'
+      )}
+    </div>
   );
 }
+
+const Input = (props) => {
+  const [searchVal, setSearchVal] = useState('');
+
+  const { usersData, setFilteredData } = props;
+
+  const onChange = (e) => {
+    let searchedValue = e.target.value;
+    const userData = [...usersData];
+
+    if (searchedValue.length) {
+      const filteredUsers = userData.filter((user, index) => {
+        return user.title.toLowerCase().includes(searchedValue.toLowerCase());
+      });
+
+      setFilteredData([...filteredUsers]);
+    } else {
+      setFilteredData([...usersData]);
+    }
+    setSearchVal(searchedValue);
+  };
+
+  return <input type="text" value={searchVal} onChange={onChange} />;
+};
